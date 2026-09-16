@@ -1,7 +1,38 @@
 Copyright (c) 2026. All rights reserved.
 
-No open-source license is granted for this repository.
+No open-source license is granted for this repository. It is published solely to
+support Factory's interview process.
 
-The source code is provided for evaluation and interview demonstration only.
-Any use, copying, modification, distribution, sublicensing, or sale requires
-prior written permission from the repository owner.
+## Permitted use
+
+If you have been invited to take part in a Factory interview, you are granted a
+limited, non-exclusive, revocable license, for the duration of that interview
+process, to:
+
+- fork, clone, and copy this repository;
+- modify it in any way, including with AI coding agents;
+- push your changes to your own fork or your own copy of it; and
+- present, demonstrate, screen-share, or record your work for the purpose of
+  that interview.
+
+You do not need to request separate written permission for any of the above.
+
+## Not permitted
+
+- Commercial or production use of any kind.
+- Redistributing this code, modified or unmodified, as your own work or under
+  your own license terms.
+- Treating the seeded sample data as real customer data, or loading real
+  customer or personal data into the application.
+
+Any use outside the terms above still requires prior written permission from the
+repository owner.
+
+## No warranty
+
+The software is provided "as is", without warranty of any kind, express or
+implied. It is a demonstration application with an unauthenticated local API and
+generated sample data, and it is not fit for production use.
+
+Nothing in this repository or in the interview process it supports constitutes an
+offer of employment.
