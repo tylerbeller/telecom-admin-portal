@@ -1,0 +1,108 @@
+package com.example.telecom.controller;
+
+import com.example.telecom.model.Plan;
+import com.example.telecom.repository.PlanRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/plans")
+public class PlanController {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PlanController.class);
+
+    private final PlanRepository repository;
+
+    public PlanController(PlanRepository repository) {
+        this.repository = repository;
+    }
+
+    @GetMapping
+    public List<PlanResponse> getAllPlans() {
+        LOG.info("Fetching all plans");
+        List<PlanResponse> plans = repository.findAll(PageRequest.of(0, 100)).stream().map(PlanResponse::from).toList();
+        LOG.debug("Found {} plans", plans.size());
+        return plans;
+    }
+
+    @GetMapping("/active")
+    public List<PlanResponse> getActivePlans() {
+        LOG.info("Fetching active plans");
+        List<PlanResponse> plans = repository.findByIsActiveTrue().stream().map(PlanResponse::from).toList();
+        LOG.debug("Found {} active plans", plans.size());
+        return plans;
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<PlanResponse> getPlan(@PathVariable Long id) {
+        LOG.info("Fetching plan with id={}", id);
+        return repository.findById(id).map(plan -> {
+            LOG.debug("Found plan: id={}", plan.getId());
+            return ResponseEntity.ok(PlanResponse.from(plan));
+        }).orElseGet(() -> {
+            LOG.warn("Plan not found: id={}", id);
+            return ResponseEntity.notFound().build();
+        });
+    }
+
+    @PostMapping
+    public PlanResponse createPlan(@RequestBody PlanRequest request) {
+        LOG.info("Creating plan");
+        Plan plan = new Plan(request.name(), request.monthlyPrice(), request.dataLimitGb(), request.minutesLimit(),
+                request.smsLimit());
+        Plan saved = repository.save(plan);
+        LOG.info("Plan created: id={}", saved.getId());
+        return PlanResponse.from(saved);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<PlanResponse> updatePlan(@PathVariable Long id, @RequestBody PlanRequest request) {
+        LOG.info("Updating plan: id={}", id);
+        return repository.findById(id).map(plan -> {
+            plan.setName(request.name());
+            plan.setMonthlyPrice(request.monthlyPrice());
+            plan.setDataLimitGb(request.dataLimitGb());
+            plan.setMinutesLimit(request.minutesLimit());
+            plan.setSmsLimit(request.smsLimit());
+            if (request.isActive() != null) {
+                plan.setIsActive(request.isActive());
+            }
+            Plan saved = repository.save(plan);
+            LOG.info("Plan updated: id={}", saved.getId());
+            return ResponseEntity.ok(PlanResponse.from(saved));
+        }).orElseGet(() -> {
+            LOG.warn("Plan not found for update: id={}", id);
+            return ResponseEntity.notFound().build();
+        });
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletePlan(@PathVariable Long id) {
+        LOG.info("Deleting plan: id={}", id);
+        if (!repository.existsById(id)) {
+            LOG.warn("Plan not found for deletion: id={}", id);
+            return ResponseEntity.notFound().build();
+        }
+        repository.deleteById(id);
+        LOG.info("Plan deleted: id={}", id);
+        return ResponseEntity.noContent().build();
+    }
+
+    public record PlanRequest(String name, BigDecimal monthlyPrice, Integer dataLimitGb, Integer minutesLimit,
+            Integer smsLimit, Boolean isActive) {
+    }
+
+    public record PlanResponse(Long id, String name, BigDecimal monthly_price, Integer data_limit_gb,
+            Integer minutes_limit, Integer sms_limit, Boolean is_active) {
+        public static PlanResponse from(Plan plan) {
+            return new PlanResponse(plan.getId(), plan.getName(), plan.getMonthlyPrice(), plan.getDataLimitGb(),
+                    plan.getMinutesLimit(), plan.getSmsLimit(), plan.getIsActive());
+        }
+    }
+}

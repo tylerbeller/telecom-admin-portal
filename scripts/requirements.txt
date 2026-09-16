@@ -1,0 +1,2 @@
+Faker==40.39.0 \
+    --hash=sha256:c4c7ec2cddfaf602c5a8a2c960614946aa8c161250bd9d49a8846cd24d1ef028

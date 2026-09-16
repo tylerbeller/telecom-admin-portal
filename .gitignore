@@ -1,0 +1,83 @@
+# Generated files and local development artifacts.
+
+# dependencies
+node_modules/
+.pnpm-store/
+
+# testing
+/coverage
+/playwright-report/
+/blob-report/
+/test-results/
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# Java/Gradle
+.gradle/
+**/build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+backend/bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+backend/app.db
+*.class
+*.jar
+*.war
+!backend/gradle/wrapper/gradle-wrapper.jar
+HELP.md
+
+# IDE - IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+# IDE - Eclipse/STS
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+
+# IDE - NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# IDE - VS Code
+.vscode/
+
+# Python
+scripts/__pycache__/
+*.pyc
