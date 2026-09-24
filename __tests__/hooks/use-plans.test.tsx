@@ -31,7 +31,10 @@ describe("usePlans", () => {
     expect(result.current.loading).toBe(true)
     await waitFor(() => expect(result.current.loading).toBe(false))
 
-    expect(fetch).toHaveBeenCalledWith("/api/plans")
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/plans",
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    )
     expect(result.current.plans).toEqual([basic])
     expect(result.current.error).toBeNull()
   })

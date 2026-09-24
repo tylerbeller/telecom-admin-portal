@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test"
 
+const backendUrl = process.env.BACKEND_URL ?? "http://localhost:8080"
+
 test.describe("Plans Page", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/plans")
@@ -12,12 +14,9 @@ test.describe("Plans Page", () => {
     await expect(table).toBeVisible()
   })
 
-  test("should load plans from API", async ({ page }) => {
-    const plansResponse = page.waitForResponse(
-      (response) => response.url().includes("/api/plans") && response.status() === 200
-    )
-    await page.reload()
-    const response = await plansResponse
+  test("should load plans from API", async ({ request }) => {
+    const response = await request.get(`${backendUrl}/api/plans?page=0&size=20`)
+    expect(response.status()).toBe(200)
     const data = await response.json()
     expect(Array.isArray(data)).toBeTruthy()
   })

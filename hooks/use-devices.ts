@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useCallback } from "react"
+import { apiSend } from "@/lib/api"
+import { usePagedResource } from "@/hooks/use-paged-resource"
 
 export interface Device {
   id: number
@@ -14,6 +16,8 @@ export interface Device {
   created_at: string | null
 }
 
+export type DeviceStatus = Device["status"]
+
 export interface DeviceCreate {
   imei: string
   model: string
@@ -25,67 +29,72 @@ export interface DeviceUpdate extends DeviceCreate {
   status?: string
 }
 
-export function useDevices() {
-  const [devices, setDevices] = useState<Device[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+export interface DeviceFilters {
+  search?: string | null
+  status?: DeviceStatus | null
+}
 
-  const fetchDevices = useCallback(async () => {
-    try {
-      setLoading(true)
-      const res = await fetch("/api/devices")
-      if (!res.ok) throw new Error("Failed to fetch devices")
-      const data = await res.json()
-      setDevices(data)
-      setError(null)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unknown error")
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+const PAGE_SIZE = 20
 
-  const createDevice = useCallback(async (device: DeviceCreate) => {
-    const res = await fetch("/api/devices", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(device),
-    })
-    if (!res.ok) throw new Error("Failed to create device")
-    const newDevice = await res.json()
-    setDevices((prev) => [...prev, newDevice])
-    return newDevice
-  }, [])
+export function useDevices(filters: DeviceFilters = {}) {
+  const {
+    items: devices,
+    loading,
+    error,
+    page,
+    totalPages,
+    totalElements,
+    fetchPage,
+    goToPage,
+    refetch,
+  } = usePagedResource<Device>({
+    path: "/api/devices",
+    pageSize: PAGE_SIZE,
+    params: { search: filters.search, status: filters.status },
+    errorMessage: "Failed to fetch devices",
+  })
 
-  const updateDevice = useCallback(async (id: number, device: DeviceUpdate) => {
-    const res = await fetch(`/api/devices/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(device),
-    })
-    if (!res.ok) throw new Error("Failed to update device")
-    const updated = await res.json()
-    setDevices((prev) => prev.map((d) => (d.id === id ? updated : d)))
-    return updated
-  }, [])
+  const createDevice = useCallback(
+    async (device: DeviceCreate) => {
+      const created = await apiSend<Device>("/api/devices", "POST", device, {
+        errorMessage: "Failed to create device",
+      })
+      await refetch()
+      return created
+    },
+    [refetch]
+  )
 
-  const deleteDevice = useCallback(async (id: number) => {
-    const res = await fetch(`/api/devices/${id}`, {
-      method: "DELETE",
-    })
-    if (!res.ok) throw new Error("Failed to delete device")
-    setDevices((prev) => prev.filter((d) => d.id !== id))
-  }, [])
+  const updateDevice = useCallback(
+    async (id: number, device: DeviceUpdate) => {
+      const updated = await apiSend<Device>(`/api/devices/${id}`, "PUT", device, {
+        errorMessage: "Failed to update device",
+      })
+      await refetch()
+      return updated
+    },
+    [refetch]
+  )
 
-  useEffect(() => {
-    fetchDevices()
-  }, [fetchDevices])
+  const deleteDevice = useCallback(
+    async (id: number) => {
+      await apiSend<void>(`/api/devices/${id}`, "DELETE", undefined, {
+        errorMessage: "Failed to delete device",
+      })
+      await refetch()
+    },
+    [refetch]
+  )
 
   return {
     devices,
     loading,
     error,
-    fetchDevices,
+    page,
+    totalPages,
+    totalElements,
+    fetchDevices: fetchPage,
+    goToPage,
     createDevice,
     updateDevice,
     deleteDevice,

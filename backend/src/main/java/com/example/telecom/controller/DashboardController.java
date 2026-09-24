@@ -3,15 +3,16 @@ package com.example.telecom.controller;
 import com.example.telecom.model.Customer;
 import com.example.telecom.model.Device;
 import com.example.telecom.model.SupportTicket;
-import com.example.telecom.repository.*;
+import com.example.telecom.repository.CustomerRepository;
+import com.example.telecom.repository.DeviceRepository;
+import com.example.telecom.repository.SupportTicketRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/dashboard")
@@ -20,14 +21,12 @@ public class DashboardController {
     private static final Logger LOG = LoggerFactory.getLogger(DashboardController.class);
 
     private final CustomerRepository customerRepository;
-    private final PlanRepository planRepository;
     private final DeviceRepository deviceRepository;
     private final SupportTicketRepository ticketRepository;
 
-    public DashboardController(CustomerRepository customerRepository, PlanRepository planRepository,
-            DeviceRepository deviceRepository, SupportTicketRepository ticketRepository) {
+    public DashboardController(CustomerRepository customerRepository, DeviceRepository deviceRepository,
+            SupportTicketRepository ticketRepository) {
         this.customerRepository = customerRepository;
-        this.planRepository = planRepository;
         this.deviceRepository = deviceRepository;
         this.ticketRepository = ticketRepository;
     }
@@ -37,10 +36,7 @@ public class DashboardController {
         LOG.info("Fetching dashboard stats");
         long activeCustomers = customerRepository.countByStatus(Customer.Status.ACTIVE);
 
-        BigDecimal monthlyRevenue = customerRepository.findByStatus(Customer.Status.ACTIVE).stream()
-                .filter(c -> c.getPlan() != null).map(c -> c.getPlan().getMonthlyPrice())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
+        BigDecimal monthlyRevenue = toMoney(customerRepository.sumMonthlyRevenueByStatusActive());
         long openTickets = ticketRepository
                 .countByStatusIn(List.of(SupportTicket.Status.OPEN, SupportTicket.Status.IN_PROGRESS));
 
@@ -82,17 +78,22 @@ public class DashboardController {
     @GetMapping("/revenue-by-plan")
     public List<RevenueData> getRevenueByPlan() {
         LOG.info("Fetching revenue by plan chart data");
-        Map<String, Long> customerCounts = customerRepository.findByStatus(Customer.Status.ACTIVE).stream()
-                .filter(c -> c.getPlan() != null)
-                .collect(Collectors.groupingBy(c -> c.getPlan().getName(), Collectors.counting()));
-
-        List<RevenueData> data = planRepository.findAll().stream()
-                .filter(plan -> customerCounts.containsKey(plan.getName()))
-                .map(plan -> new RevenueData(plan.getName(),
-                        plan.getMonthlyPrice().multiply(BigDecimal.valueOf(customerCounts.get(plan.getName())))))
-                .toList();
+        List<RevenueData> data = customerRepository.sumRevenueByPlan().stream()
+                .map(row -> new RevenueData((String) row[0], toMoney(row[1]))).toList();
         LOG.debug("Found {} plans with revenue data", data.size());
         return data;
+    }
+
+    /**
+     * Normalizes SQLite aggregate results (which may surface as Double or other
+     * numeric types) back to 2-decimal money, matching the exact BigDecimal
+     * arithmetic the in-memory implementation used to produce.
+     */
+    private static BigDecimal toMoney(Object value) {
+        if (value == null) {
+            return BigDecimal.ZERO.setScale(2);
+        }
+        return new BigDecimal(value.toString()).setScale(2, RoundingMode.HALF_UP);
     }
 
     public record DashboardStats(long active_customers, BigDecimal monthly_revenue, long open_tickets,

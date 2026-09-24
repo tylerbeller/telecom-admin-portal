@@ -24,6 +24,7 @@ node_modules/
 # debug
 npm-debug.log*
 .pnpm-debug.log*
+/backend-startup*.log
 
 # env files (can opt-in for committing if needed)
 .env*
@@ -44,6 +45,7 @@ backend/bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
 backend/app.db
+backend/app.db-*
 *.class
 *.jar
 *.war
