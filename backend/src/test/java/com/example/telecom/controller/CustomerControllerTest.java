@@ -8,7 +8,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -19,6 +21,9 @@ import java.util.Optional;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -39,28 +44,70 @@ class CustomerControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(new CustomerController(repository, planRepository)).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(new CustomerController(repository, planRepository))
+                .setControllerAdvice(new ApiExceptionHandler()).build();
     }
 
     @Test
-    void getAllCustomersFlattensPlanOntoTheResponse() throws Exception {
-        when(repository.findAll(any(Pageable.class)))
+    void getCustomersFlattensPlanOntoTheResponse() throws Exception {
+        when(repository.findFiltered(isNull(), isNull(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(customer(1L, plan(2L, "Standard", "40.00")))));
 
-        mockMvc.perform(get("/api/customers")).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].first_name").value("First1"))
-                .andExpect(jsonPath("$[0].last_name").value("Last1")).andExpect(jsonPath("$[0].plan_id").value(2))
-                .andExpect(jsonPath("$[0].plan_name").value("Standard"))
-                .andExpect(jsonPath("$[0].status").value("ACTIVE"));
+        mockMvc.perform(get("/api/customers")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].first_name").value("First1"))
+                .andExpect(jsonPath("$.content[0].last_name").value("Last1"))
+                .andExpect(jsonPath("$.content[0].plan_id").value(2))
+                .andExpect(jsonPath("$.content[0].plan_name").value("Standard"))
+                .andExpect(jsonPath("$.content[0].status").value("ACTIVE"))
+                .andExpect(jsonPath("$.totalElements").value(1));
     }
 
     @Test
-    void getAllCustomersToleratesAMissingPlan() throws Exception {
-        when(repository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(customer(1L, null))));
+    void getCustomersToleratesAMissingPlan() throws Exception {
+        when(repository.findFiltered(isNull(), isNull(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(customer(1L, null))));
 
         mockMvc.perform(get("/api/customers")).andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].plan_id").value(nullValue()))
-                .andExpect(jsonPath("$[0].plan_name").value(nullValue()));
+                .andExpect(jsonPath("$.content[0].plan_id").value(nullValue()))
+                .andExpect(jsonPath("$.content[0].plan_name").value(nullValue()));
+    }
+
+    @Test
+    void getCustomersForwardsSearchAndStatusFilters() throws Exception {
+        when(repository.findFiltered(eq("danielle"), eq(Customer.Status.SUSPENDED), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/customers").param("search", "danielle").param("status", "SUSPENDED"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0));
+
+        verify(repository).findFiltered(eq("danielle"), eq(Customer.Status.SUSPENDED), any(Pageable.class));
+    }
+
+    @Test
+    void getCustomersForwardsSort() throws Exception {
+        when(repository.findFiltered(isNull(), isNull(), any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/customers").param("sort", "BALANCE_DESC")).andExpect(status().isOk());
+
+        verify(repository).findFiltered(isNull(), isNull(),
+                argThat(pageable -> pageable.getSort().getOrderFor("balance").getDirection() == Sort.Direction.DESC));
+    }
+
+    @Test
+    void getCustomersRejectsAnUnknownSort() throws Exception {
+        mockMvc.perform(get("/api/customers").param("sort", "EMAIL_ASC")).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Invalid value"));
+
+        verify(repository, never()).findFiltered(any(), any(), any(Pageable.class));
+    }
+
+    @Test
+    void getCustomersRejectsAnUnknownStatus() throws Exception {
+        mockMvc.perform(get("/api/customers").param("status", "PAUSED")).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Invalid value"));
+
+        verify(repository, never()).findFiltered(any(), any(), any(Pageable.class));
     }
 
     @Test
@@ -82,6 +129,33 @@ class CustomerControllerTest {
                 .andExpect(status().isBadRequest());
 
         verify(repository, never()).save(any(Customer.class));
+    }
+
+    @Test
+    void createCustomerRejectsAnInvalidPayload() throws Exception {
+        String body = """
+                {"firstName":"Ada","lastName":"Lovelace","phone":"555-0100","planId":2}
+                """;
+
+        mockMvc.perform(post("/api/customers").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error").value("Validation failed"))
+                .andExpect(jsonPath("$.fields.email").exists());
+
+        verify(repository, never()).save(any(Customer.class));
+    }
+
+    @Test
+    void createCustomerMapsADuplicateEmailToConflict() throws Exception {
+        when(planRepository.findById(2L)).thenReturn(Optional.of(plan(2L, "Standard", "40.00")));
+        when(repository.save(any(Customer.class))).thenThrow(new JpaSystemException(new RuntimeException(
+                "[SQLITE_CONSTRAINT_UNIQUE] A UNIQUE constraint failed (UNIQUE constraint failed: customers.email)")));
+
+        String body = """
+                {"firstName":"Ada","lastName":"Lovelace","email":"customer1@example.com","phone":"555-0100","planId":2}
+                """;
+
+        mockMvc.perform(post("/api/customers").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.error").value("Data conflict"));
     }
 
     @Test
@@ -116,6 +190,19 @@ class CustomerControllerTest {
 
         mockMvc.perform(put("/api/customers/1").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SUSPENDED"));
+    }
+
+    @Test
+    void updateCustomerRejectsAnUnknownStatus() throws Exception {
+        when(repository.findById(1L)).thenReturn(Optional.of(customer(1L, plan(2L, "Standard", "40.00"))));
+
+        String body = """
+                {"firstName":"First1","lastName":"Last1","email":"customer1@example.com","phone":"555-0001",
+                 "status":"PAUSED"}
+                """;
+
+        mockMvc.perform(put("/api/customers/1").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error").value("Invalid value"));
     }
 
     @Test

@@ -57,12 +57,15 @@ public class UsageRecordController {
     }
 
     @GetMapping("/customer/{customerId}")
-    public List<UsageRecordResponse> getByCustomer(@PathVariable Long customerId) {
+    public PagedResponse getByCustomer(@PathVariable Long customerId, @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
         LOG.info("Fetching usage records for customer: customerId={}", customerId);
-        List<UsageRecordResponse> records = repository.findByCustomerId(customerId, PageRequest.of(0, 1000)).stream()
-                .map(UsageRecordResponse::from).toList();
-        LOG.debug("Found {} usage records for customer {}", records.size(), customerId);
-        return records;
+        PageRequest pageRequest = PageRequest.of(Math.max(page, 0), Math.max(1, Math.min(size, 100)));
+        Page<UsageRecord> result = repository.findByCustomerId(customerId, pageRequest);
+        LOG.debug("Found {} usage records for customer {} (page {} of {})", result.getNumberOfElements(), customerId,
+                result.getNumber(), result.getTotalPages());
+        return new PagedResponse(result.getContent().stream().map(UsageRecordResponse::from).toList(),
+                result.getNumber(), result.getTotalPages(), result.getTotalElements(), result.hasNext());
     }
 
     public record PagedResponse(List<UsageRecordResponse> content, int page, int totalPages, long totalElements,

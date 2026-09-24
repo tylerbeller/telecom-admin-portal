@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useCallback } from "react"
+import { apiSend } from "@/lib/api"
+import { usePagedResource } from "@/hooks/use-paged-resource"
 
 export interface Customer {
   id: number
@@ -16,6 +18,17 @@ export interface Customer {
   created_at: string | null
 }
 
+export type CustomerStatus = Customer["status"]
+export type CustomerSort =
+  | "NAME_ASC"
+  | "NAME_DESC"
+  | "PLAN_ASC"
+  | "PLAN_DESC"
+  | "STATUS_ASC"
+  | "STATUS_DESC"
+  | "BALANCE_ASC"
+  | "BALANCE_DESC"
+
 export interface CustomerCreate {
   firstName: string
   lastName: string
@@ -25,71 +38,78 @@ export interface CustomerCreate {
   balance?: number
 }
 
-export interface CustomerUpdate extends CustomerCreate {
+export interface CustomerUpdate extends Omit<CustomerCreate, "planId"> {
+  planId?: number
   status?: string
 }
 
-export function useCustomers() {
-  const [customers, setCustomers] = useState<Customer[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+export interface CustomerFilters {
+  search?: string | null
+  status?: CustomerStatus | null
+  sort?: CustomerSort | null
+}
 
-  const fetchCustomers = useCallback(async () => {
-    try {
-      setLoading(true)
-      const res = await fetch("/api/customers")
-      if (!res.ok) throw new Error("Failed to fetch customers")
-      const data = await res.json()
-      setCustomers(data)
-      setError(null)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unknown error")
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+const PAGE_SIZE = 20
 
-  const createCustomer = useCallback(async (customer: CustomerCreate) => {
-    const res = await fetch("/api/customers", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(customer),
-    })
-    if (!res.ok) throw new Error("Failed to create customer")
-    const newCustomer = await res.json()
-    setCustomers((prev) => [...prev, newCustomer])
-    return newCustomer
-  }, [])
+export function useCustomers(filters: CustomerFilters = {}) {
+  const {
+    items: customers,
+    loading,
+    error,
+    page,
+    totalPages,
+    totalElements,
+    fetchPage,
+    goToPage,
+    refetch,
+  } = usePagedResource<Customer>({
+    path: "/api/customers",
+    pageSize: PAGE_SIZE,
+    params: { search: filters.search, status: filters.status, sort: filters.sort },
+    errorMessage: "Failed to fetch customers",
+  })
 
-  const updateCustomer = useCallback(async (id: number, customer: CustomerUpdate) => {
-    const res = await fetch(`/api/customers/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(customer),
-    })
-    if (!res.ok) throw new Error("Failed to update customer")
-    const updated = await res.json()
-    setCustomers((prev) => prev.map((c) => (c.id === id ? updated : c)))
-    return updated
-  }, [])
+  const createCustomer = useCallback(
+    async (customer: CustomerCreate) => {
+      const created = await apiSend<Customer>("/api/customers", "POST", customer, {
+        errorMessage: "Failed to create customer",
+      })
+      await refetch()
+      return created
+    },
+    [refetch]
+  )
 
-  const deleteCustomer = useCallback(async (id: number) => {
-    const res = await fetch(`/api/customers/${id}`, {
-      method: "DELETE",
-    })
-    if (!res.ok) throw new Error("Failed to delete customer")
-    setCustomers((prev) => prev.filter((c) => c.id !== id))
-  }, [])
+  const updateCustomer = useCallback(
+    async (id: number, customer: CustomerUpdate) => {
+      const updated = await apiSend<Customer>(`/api/customers/${id}`, "PUT", customer, {
+        errorMessage: "Failed to update customer",
+      })
+      await refetch()
+      return updated
+    },
+    [refetch]
+  )
 
-  useEffect(() => {
-    fetchCustomers()
-  }, [fetchCustomers])
+  const deleteCustomer = useCallback(
+    async (id: number) => {
+      await apiSend<void>(`/api/customers/${id}`, "DELETE", undefined, {
+        errorMessage: "Failed to delete customer",
+      })
+      await refetch()
+    },
+    [refetch]
+  )
 
   return {
     customers,
     loading,
     error,
-    fetchCustomers,
+    page,
+    totalPages,
+    totalElements,
+    fetchCustomers: fetchPage,
+    goToPage,
     createCustomer,
     updateCustomer,
     deleteCustomer,

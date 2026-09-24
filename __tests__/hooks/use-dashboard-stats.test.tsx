@@ -39,7 +39,12 @@ describe("useDashboardStats", () => {
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     expect(vi.mocked(fetch)).toHaveBeenCalledTimes(5)
-    Object.keys(payloads).forEach((url) => expect(fetch).toHaveBeenCalledWith(url))
+    Object.keys(payloads).forEach((url) =>
+      expect(fetch).toHaveBeenCalledWith(
+        url,
+        expect.objectContaining({ signal: expect.any(AbortSignal) })
+      )
+    )
   })
 
   it("populates every slice of dashboard state", async () => {

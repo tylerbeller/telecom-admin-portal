@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { apiFetch, apiSend, isAbortError } from "@/lib/api"
 
 export interface Plan {
   id: number
@@ -28,57 +29,62 @@ export function usePlans() {
   const [plans, setPlans] = useState<Plan[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   const fetchPlans = useCallback(async () => {
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     try {
       setLoading(true)
-      const res = await fetch("/api/plans")
-      if (!res.ok) throw new Error("Failed to fetch plans")
-      const data = await res.json()
-      setPlans(data)
+      const data = await apiFetch<Plan[]>("/api/plans", {
+        signal: controller.signal,
+        errorMessage: "Failed to fetch plans",
+      })
+      setPlans(data ?? [])
       setError(null)
     } catch (e) {
+      if (isAbortError(e)) return
       setError(e instanceof Error ? e.message : "Unknown error")
     } finally {
-      setLoading(false)
+      if (abortRef.current === controller) setLoading(false)
     }
   }, [])
 
   const createPlan = useCallback(async (plan: PlanCreate) => {
-    const res = await fetch("/api/plans", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(plan),
+    const newPlan = await apiSend<Plan>("/api/plans", "POST", plan, {
+      errorMessage: "Failed to create plan",
     })
-    if (!res.ok) throw new Error("Failed to create plan")
-    const newPlan = await res.json()
     setPlans((prev) => [...prev, newPlan])
     return newPlan
   }, [])
 
   const updatePlan = useCallback(async (id: number, plan: PlanUpdate) => {
-    const res = await fetch(`/api/plans/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(plan),
+    const updated = await apiSend<Plan>(`/api/plans/${id}`, "PUT", plan, {
+      errorMessage: "Failed to update plan",
     })
-    if (!res.ok) throw new Error("Failed to update plan")
-    const updated = await res.json()
     setPlans((prev) => prev.map((p) => (p.id === id ? updated : p)))
     return updated
   }, [])
 
   const deletePlan = useCallback(async (id: number) => {
-    const res = await fetch(`/api/plans/${id}`, {
-      method: "DELETE",
+    await apiSend<void>(`/api/plans/${id}`, "DELETE", undefined, {
+      errorMessage: "Failed to delete plan",
     })
-    if (!res.ok) throw new Error("Failed to delete plan")
     setPlans((prev) => prev.filter((p) => p.id !== id))
   }, [])
 
   useEffect(() => {
     fetchPlans()
   }, [fetchPlans])
+
+  useEffect(
+    () => () => {
+      abortRef.current?.abort()
+    },
+    []
+  )
 
   return {
     plans,

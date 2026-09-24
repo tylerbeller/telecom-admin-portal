@@ -12,7 +12,7 @@ test.describe("API Health", () => {
     const response = await request.get(`${backendUrl}/api/customers`)
     expect(response.ok()).toBeTruthy()
     const data = await response.json()
-    expect(Array.isArray(data)).toBeTruthy()
+    expect(Array.isArray(data.content)).toBeTruthy()
   })
 
   test("plans API should respond", async ({ request }) => {
@@ -26,7 +26,7 @@ test.describe("API Health", () => {
     const response = await request.get(`${backendUrl}/api/devices`)
     expect(response.ok()).toBeTruthy()
     const data = await response.json()
-    expect(Array.isArray(data)).toBeTruthy()
+    expect(Array.isArray(data.content)).toBeTruthy()
   })
 
   test("dashboard stats API should respond", async ({ request }) => {
