@@ -217,16 +217,19 @@ jobs:
       # API scan driven by the served OpenAPI spec: ZAP exercises every
       # documented endpoint against the running backend. -I keeps warnings
       # advisory on first adoption; errors still fail the job.
+      # The ZAP container runs as its own uid, so the report directory must
+      # be world-writable or the scan errors out after completing.
       - name: Run ZAP API scan against the running backend
         run: |
-          docker run --network host --rm -v "$PWD:/zap/wrk" ghcr.io/zaproxy/zaproxy:stable \
+          mkdir -p zap-output && chmod 777 zap-output
+          docker run --network host --rm -v "$PWD/zap-output:/zap/wrk:rw" ghcr.io/zaproxy/zaproxy:stable \
             zap-api-scan.py -t http://localhost:8080/v3/api-docs -f openapi -I -J zap-report.json
-          test -f zap-report.json
+          test -f zap-output/zap-report.json
 
       - name: Upload ZAP report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: ${{ !cancelled() }}
         with:
           name: zap-baseline-report
-          path: zap-report.json
+          path: zap-output/zap-report.json
           retention-days: 30

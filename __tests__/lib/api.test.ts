@@ -97,6 +97,20 @@ describe("apiFetch", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(null, { ok: false, status: 503 })))
     await expect(apiFetch("/api/x")).rejects.toThrow("Request failed (503)")
   })
+
+  it("resolves to null on a malformed 2xx body", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => {
+          throw new Error("bad json")
+        },
+      } as unknown as Response)
+    )
+    await expect(apiFetch("/api/x")).resolves.toBeNull()
+  })
 })
 
 describe("apiSend", () => {

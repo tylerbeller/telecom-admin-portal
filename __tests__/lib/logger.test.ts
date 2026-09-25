@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest"
-import { logger } from "@/lib/logger"
+import { logger, createLogger } from "@/lib/logger"
 
 describe("logger redaction", () => {
   afterEach(() => {
@@ -35,5 +35,33 @@ describe("logger redaction", () => {
     expect(output.customer.name).toBe("Ada")
     expect(output.customer.phone).toBe("[redacted]")
     expect(output.status).toBe(500)
+  })
+
+  it("warns through console.warn", () => {
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {})
+
+    logger.warn({ ticketId: 7 }, "slow response")
+
+    expect(spy).toHaveBeenCalled()
+    expect(spy.mock.calls[0][0]).toContain("slow response")
+  })
+
+  it("suppresses debug and info outside development", () => {
+    const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {})
+    const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {})
+
+    logger.debug({ a: 1 }, "hidden")
+    logger.info({ b: 2 }, "also hidden")
+
+    expect(debugSpy).not.toHaveBeenCalled()
+    expect(infoSpy).not.toHaveBeenCalled()
+  })
+
+  it("prefixes child logger output with its context", () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {})
+
+    createLogger("billing").error({}, "charge failed")
+
+    expect(spy.mock.calls[0][0]).toContain("[billing]")
   })
 })
