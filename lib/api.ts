@@ -7,6 +7,9 @@
  * instead of collapsing everything into a generic "request failed" string.
  */
 
+import { flags } from "./flags"
+import { logger } from "./logger"
+
 export interface ApiErrorBody {
   error?: string
   message?: string
@@ -46,11 +49,43 @@ export function buildQuery(params: Record<string, QueryValue>): string {
 export interface ApiFetchOptions extends RequestInit {
   /** Fallback used when the response body carries no usable message. */
   errorMessage?: string
+  /** Per-request timeout in ms; defaults to 15s. Override for slow operations or tests. */
+  timeoutMs?: number
 }
 
-export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
-  const { errorMessage, ...init } = options
-  const response = await fetch(path, init)
+const DEFAULT_TIMEOUT_MS = 15_000
+/** GETs are idempotent, so only they earn automatic retries. */
+const GET_ATTEMPTS = 3
+const RETRY_BACKOFF_MS = 250
+
+/** W3C trace context, so a browser request can be found in the backend logs by trace id. */
+function newTraceparent(): string {
+  const hex = crypto.randomUUID().replaceAll("-", "")
+  return `00-${hex}-${hex.slice(0, 16)}-01`
+}
+
+function isRetryable(error: unknown): boolean {
+  // A caller's own abort is a cancellation, never a failure to retry.
+  if (isAbortError(error)) return false
+  if (error instanceof ApiRequestError) return error.status >= 500
+  // Network failures and our own timeout (TimeoutError) are retryable.
+  return true
+}
+
+async function singleRequest<T>(
+  path: string,
+  init: RequestInit,
+  errorMessage: string | undefined,
+  timeoutMs: number
+): Promise<T> {
+  const headers = new Headers(init.headers)
+  if (!headers.has("traceparent")) headers.set("traceparent", newTraceparent())
+  const signal = AbortSignal.any([
+    ...(init.signal ? [init.signal] : []),
+    AbortSignal.timeout(timeoutMs),
+  ])
+
+  const response = await fetch(path, { ...init, headers, signal })
 
   if (!response.ok) {
     const body = (await response.json().catch(() => null)) as ApiErrorBody | null
@@ -69,6 +104,40 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
     if (isAbortError(error)) throw error
     return null as T
   }
+}
+
+export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
+  const { errorMessage, timeoutMs = DEFAULT_TIMEOUT_MS, ...init } = options
+  const method = (init.method ?? "GET").toUpperCase()
+  const attempts = method === "GET" ? GET_ATTEMPTS : 1
+
+  let lastError: unknown
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const startedAt = Date.now()
+    try {
+      const result = await singleRequest<T>(path, init, errorMessage, timeoutMs)
+      if (flags.apiDebug) {
+        logger.debug({ path, method, attempt, ms: Date.now() - startedAt }, "api request ok")
+      }
+      return result
+    } catch (error) {
+      if (isAbortError(error) || !isRetryable(error) || attempt === attempts) {
+        if (!isAbortError(error) && isRetryable(error)) {
+          logger.error(
+            { path, method, attempts: attempt, status: (error as ApiRequestError).status },
+            "api request failed"
+          )
+        }
+        throw error
+      }
+      lastError = error
+      if (flags.apiDebug) {
+        logger.debug({ path, method, attempt }, "api request retrying")
+      }
+      await new Promise((resolve) => setTimeout(resolve, RETRY_BACKOFF_MS * 2 ** (attempt - 1)))
+    }
+  }
+  throw lastError
 }
 
 /** POST/PUT/PATCH/DELETE helper that JSON-encodes the body. */

@@ -1,0 +1,40 @@
+name: CI failure triage
+
+# Error-to-insight: a red main build files its own issue instead of waiting
+# for someone to notice. Deduplicates against open issues with the same title.
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  issues: write
+
+jobs:
+  open-issue:
+    name: File issue on main failure
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+      - name: Open a triage issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          open_count=$(gh issue list --state open --search "CI failed on main in:title" --json number --jq 'length')
+          if [ "$open_count" -gt 0 ]; then
+            echo "An open CI-failure issue already exists; not filing a duplicate."
+            exit 0
+          fi
+          gh issue create \
+            --title "CI failed on main (${SHA})" \
+            --label bug \
+            --body "The CI workflow failed on main.
+
+          Run: ${RUN_URL}
+          Commit: ${SHA}
+
+          Triage steps: docs/runbooks/ci-failure-triage.md"

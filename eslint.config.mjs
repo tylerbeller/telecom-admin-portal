@@ -19,6 +19,10 @@ const eslintConfig = defineConfig([
   ]),
   {
     rules: {
+      // Complexity gates. Thresholds are ratchets set just above the current
+      // worst file (app/tickets/page.tsx at 32); they only move down.
+      complexity: ["error", 35],
+      "max-depth": ["error", 5],
       "react-hooks/set-state-in-effect": "off",
       "no-restricted-globals": [
         "error",

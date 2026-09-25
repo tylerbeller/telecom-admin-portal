@@ -1,0 +1,7 @@
+# Settings live here (pnpm 10). Not a multi-package workspace; the backend is
+# Gradle and is orchestrated through scripts/run-backend.mjs.
+
+# Dependency stability delay: only install releases at least 7 days old, so a
+# compromised package version published minutes ago cannot land via a routine
+# install or update.
+minimumReleaseAge: 10080
