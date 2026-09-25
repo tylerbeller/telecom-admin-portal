@@ -19,6 +19,13 @@ export default defineConfig({
       reporter: ["text", "json", "html", "lcov"],
       reportsDirectory: "./coverage",
       exclude: ["node_modules/**", "e2e/**", "**/*.config.*", "**/*.d.ts", "components/ui/**"],
+      // Floors sit just under the measured baseline (91.6% statements,
+      // 94.6% lines). Raise them as coverage improves; never lower them
+      // to make a change pass.
+      thresholds: {
+        statements: 88,
+        lines: 90,
+      },
     },
   },
   resolve: {

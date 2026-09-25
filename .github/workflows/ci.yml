@@ -33,11 +33,19 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Agent contract present
+        run: |
+          test -s AGENTS.md
+          test "$(wc -l < AGENTS.md)" -gt 20
+
       - name: Check formatting
         run: pnpm format:check
 
       - name: Lint
         run: pnpm lint
+
+      - name: Duplicate and dead-code gates
+        run: pnpm check:dup && pnpm check:deps
 
       - name: Test with coverage
         run: pnpm test:frontend:coverage
@@ -85,7 +93,7 @@ jobs:
         run: ./gradlew lint
 
       - name: Test with coverage
-        run: ./gradlew test jacocoTestReport
+        run: ./gradlew test jacocoTestReport jacocoTestCoverageVerification
 
       - name: Upload backend coverage
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
