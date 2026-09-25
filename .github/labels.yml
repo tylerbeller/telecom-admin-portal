@@ -1,0 +1,24 @@
+# The label taxonomy, versioned so it is visible in the repo rather than only
+# in GitHub settings. Applied to the repository by hand or via a label-sync
+# action; the two must not drift.
+- name: area:frontend
+  color: "1D76DB"
+  description: Next.js app
+- name: area:backend
+  color: "0E8A16"
+  description: Spring Boot API
+- name: area:infra
+  color: "5319E7"
+  description: CI, tooling, workflows
+- name: priority:high
+  color: "B60205"
+  description: Blocks work or production
+- name: priority:medium
+  color: "FBCA04"
+  description: Next in queue
+- name: priority:low
+  color: "C2E0C6"
+  description: When time allows
+- name: type:debt
+  color: "D4C5F9"
+  description: Tech debt with a tracked plan
