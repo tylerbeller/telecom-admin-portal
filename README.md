@@ -1,5 +1,7 @@
 # Telecom Demo Admin Portal
 
+[![CI](https://github.com/tylerbeller/telecom-admin-portal/actions/workflows/ci.yml/badge.svg)](https://github.com/tylerbeller/telecom-admin-portal/actions/workflows/ci.yml)
+
 A telecom user administration system built with Next.js and Spring Boot.
 
 > **Demo use only:** This project uses generated sample data and an unauthenticated local API.
@@ -126,6 +128,13 @@ pnpm test:e2e       # Full Playwright browser suite
 ```bash
 pnpm lint
 ```
+
+## Repository conventions
+
+`AGENTS.md` is the working contract for anyone (human or agent) changing this
+repo: setup, gates, and the non-negotiables learned from past defects. The API
+contract is checked in at `docs/api/openapi.json` with a drift test keeping it
+honest, and operational runbooks live in `docs/runbooks/`.
 
 ## Application Pages
 
