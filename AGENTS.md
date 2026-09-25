@@ -32,6 +32,10 @@ pnpm lint:all         # eslint + tsc + spotbugs + pmd
 pnpm format:check     # prettier + spotless
 pnpm check:dup        # jscpd duplicate-code gate
 pnpm check:deps       # knip dead-dependency gate
+pnpm check:filesize   # large-file ratchet
+pnpm check:todos      # debt markers must reference an issue: TODO(#123)
+pnpm check:agents     # this file's documented commands must exist
+pnpm build && pnpm check:bundle   # bundle-size ratchet
 ```
 
 The full local gate before opening a PR is all of the above. CI runs the same

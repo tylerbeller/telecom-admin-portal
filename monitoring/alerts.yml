@@ -1,0 +1,37 @@
+# Prometheus alert rules for the telecom portal backend. Load alongside the
+# scrape config that targets /actuator/prometheus. These are the conditions
+# worth waking someone up about; each maps to a runbook in docs/runbooks.
+groups:
+  - name: telecom-portal
+    rules:
+      - alert: BackendDown
+        expr: up{job="telecom-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Telecom backend is not responding to scrapes"
+          runbook: docs/runbooks/backend-5xx-under-write-load.md
+
+      - alert: BackendElevated5xx
+        expr: |
+          sum(rate(http_server_requests_seconds_count{job="telecom-backend",status=~"5.."}[5m]))
+            / sum(rate(http_server_requests_seconds_count{job="telecom-backend"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "More than 5% of backend requests are 5xx over 5 minutes"
+          runbook: docs/runbooks/backend-5xx-under-write-load.md
+
+      - alert: BackendSlowWrites
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_server_requests_seconds_bucket{job="telecom-backend",method=~"POST|PUT|DELETE"}[5m])) by (le)
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "p95 write latency above 2s; SQLite lock contention is the usual suspect"
+          runbook: docs/runbooks/backend-5xx-under-write-load.md

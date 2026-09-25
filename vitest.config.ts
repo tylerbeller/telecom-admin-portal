@@ -8,6 +8,10 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./__tests__/setup.ts"],
+    // Flaky-surface detection: retries run in CI only, so a test that only
+    // passes on retry is visible in CI output instead of being absorbed
+    // silently into local runs.
+    retry: process.env.CI ? 2 : 0,
     exclude: ["**/node_modules/**", "**/e2e/**"],
     reporters: ["default", "json", "junit"],
     outputFile: {

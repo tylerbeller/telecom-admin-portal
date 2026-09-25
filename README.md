@@ -123,6 +123,18 @@ pnpm test:backend   # Gradle test
 pnpm test:e2e       # Full Playwright browser suite
 ```
 
+### Building for production
+
+```bash
+pnpm build            # Next.js production build (also runs the bundle-size gate input)
+pnpm build:backend    # Gradle build, produces backend/build/libs/*.jar
+pnpm check:bundle     # Assert the client bundle stays within budget (after pnpm build)
+```
+
+Other gates: `pnpm check:dup` (duplicate code), `pnpm check:deps` (dead
+dependencies), `pnpm check:filesize`, `pnpm check:todos`, and
+`pnpm check:agents` (verifies AGENTS.md's documented commands still exist).
+
 ### Linting
 
 ```bash

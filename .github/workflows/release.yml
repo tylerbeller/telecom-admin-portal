@@ -47,3 +47,16 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release create "${{ github.ref_name }}" backend/build/libs/*.jar --generate-notes --title "${{ github.ref_name }}"
+
+      # Record the deployment so release history is observable from the repo,
+      # not just from the tag list.
+      - name: Record deployment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          deployment_id=$(gh api "repos/${{ github.repository }}/deployments" \
+            -f ref="${{ github.ref_name }}" \
+            -f environment=release \
+            -f description="Release ${{ github.ref_name }} published" --jq .id)
+          gh api "repos/${{ github.repository }}/deployments/${deployment_id}/statuses" \
+            -f state=success
