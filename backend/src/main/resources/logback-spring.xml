@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Logging configuration. Two deliberate choices:
+  1. Trace context (traceId/spanId) is in every line, so a frontend
+     traceparent header can be grepped straight into backend logs.
+  2. Messages are scrubbed: email-shaped and long-number-shaped runs are
+     masked, because the dataset is synthetic but the habit is load-bearing
+     (see docs/privacy.md).
+-->
+<configuration>
+    <property name="CONSOLE_PATTERN"
+              value="%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %5p [%15.15t] trace=%X{traceId:-none} %-40.40logger{39} : %replace(%replace(%msg){'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}','[redacted-email]'}){'[0-9]{12,}','[redacted-number]'}%n%ex"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
