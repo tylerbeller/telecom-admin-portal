@@ -2,6 +2,10 @@ package com.example.telecom.controller;
 
 import com.example.telecom.model.Plan;
 import com.example.telecom.repository.PlanRepository;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
@@ -52,7 +56,7 @@ public class PlanController {
     }
 
     @PostMapping
-    public PlanResponse createPlan(@RequestBody PlanRequest request) {
+    public PlanResponse createPlan(@Valid @RequestBody PlanRequest request) {
         LOG.info("Creating plan");
         Plan plan = new Plan(request.name(), request.monthlyPrice(), request.dataLimitGb(), request.minutesLimit(),
                 request.smsLimit());
@@ -62,7 +66,7 @@ public class PlanController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PlanResponse> updatePlan(@PathVariable Long id, @RequestBody PlanRequest request) {
+    public ResponseEntity<PlanResponse> updatePlan(@PathVariable Long id, @Valid @RequestBody PlanRequest request) {
         LOG.info("Updating plan: id={}", id);
         return repository.findById(id).map(plan -> {
             plan.setName(request.name());
@@ -94,8 +98,8 @@ public class PlanController {
         return ResponseEntity.noContent().build();
     }
 
-    public record PlanRequest(String name, BigDecimal monthlyPrice, Integer dataLimitGb, Integer minutesLimit,
-            Integer smsLimit, Boolean isActive) {
+    public record PlanRequest(@NotBlank String name, @NotNull @DecimalMin("0.00") BigDecimal monthlyPrice,
+            Integer dataLimitGb, Integer minutesLimit, Integer smsLimit, Boolean isActive) {
     }
 
     public record PlanResponse(Long id, String name, BigDecimal monthly_price, Integer data_limit_gb,

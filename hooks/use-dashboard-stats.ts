@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { apiFetch, isAbortError } from "@/lib/api"
 
 export interface DashboardStats {
   active_customers: number
@@ -27,37 +28,65 @@ export function useDashboardStats() {
   const [revenueByPlan, setRevenueByPlan] = useState<RevenueData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   const fetchStats = useCallback(async () => {
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+    const signal = controller.signal
+
     try {
       setLoading(true)
-      const [statsRes, customersPlanRes, devicesStatusRes, ticketsStatusRes, revenueRes] =
-        await Promise.all([
-          fetch("/api/dashboard/stats"),
-          fetch("/api/dashboard/customers-by-plan"),
-          fetch("/api/dashboard/devices-by-status"),
-          fetch("/api/dashboard/tickets-by-status"),
-          fetch("/api/dashboard/revenue-by-plan"),
-        ])
+      // Every panel is required, so a failure in any of them surfaces as an
+      // error instead of leaving a chart silently empty.
+      const [statsData, byPlan, byDeviceStatus, byTicketStatus, revenue] = await Promise.all([
+        apiFetch<DashboardStats>("/api/dashboard/stats", {
+          signal,
+          errorMessage: "Failed to fetch stats",
+        }),
+        apiFetch<ChartData[]>("/api/dashboard/customers-by-plan", {
+          signal,
+          errorMessage: "Failed to fetch customers by plan",
+        }),
+        apiFetch<ChartData[]>("/api/dashboard/devices-by-status", {
+          signal,
+          errorMessage: "Failed to fetch devices by status",
+        }),
+        apiFetch<ChartData[]>("/api/dashboard/tickets-by-status", {
+          signal,
+          errorMessage: "Failed to fetch tickets by status",
+        }),
+        apiFetch<RevenueData[]>("/api/dashboard/revenue-by-plan", {
+          signal,
+          errorMessage: "Failed to fetch revenue by plan",
+        }),
+      ])
 
-      if (!statsRes.ok) throw new Error("Failed to fetch stats")
-
-      setStats(await statsRes.json())
-      setCustomersByPlan(await customersPlanRes.json())
-      setDevicesByStatus(await devicesStatusRes.json())
-      setTicketsByStatus(await ticketsStatusRes.json())
-      setRevenueByPlan(await revenueRes.json())
+      setStats(statsData)
+      setCustomersByPlan(byPlan ?? [])
+      setDevicesByStatus(byDeviceStatus ?? [])
+      setTicketsByStatus(byTicketStatus ?? [])
+      setRevenueByPlan(revenue ?? [])
       setError(null)
     } catch (e) {
+      if (isAbortError(e)) return
       setError(e instanceof Error ? e.message : "Unknown error")
     } finally {
-      setLoading(false)
+      if (abortRef.current === controller) setLoading(false)
     }
   }, [])
 
   useEffect(() => {
     fetchStats()
   }, [fetchStats])
+
+  useEffect(
+    () => () => {
+      abortRef.current?.abort()
+    },
+    []
+  )
 
   return {
     stats,

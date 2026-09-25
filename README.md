@@ -1,5 +1,7 @@
 # Telecom Demo Admin Portal
 
+[![CI](https://github.com/tylerbeller/telecom-admin-portal/actions/workflows/ci.yml/badge.svg)](https://github.com/tylerbeller/telecom-admin-portal/actions/workflows/ci.yml)
+
 A telecom user administration system built with Next.js and Spring Boot.
 
 > **Demo use only:** This project uses generated sample data and an unauthenticated local API.
@@ -72,10 +74,16 @@ pnpm reset:db   # Delete DB + re-seed
 Create a Python virtual environment and install the pinned seeder dependency:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
+python3 -m venv .venv          # Windows: py -m venv .venv
+source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r scripts/requirements.txt
 ```
+
+The seeder scripts locate the interpreter themselves (repo `.venv` first, then
+`python3`/`python`/`py`), so `pnpm setup:db` and `pnpm reset:db` work on Windows
+as well. The schema itself lives in the Flyway migration
+(`backend/src/main/resources/db/migration/V1__init.sql`) and the seeder executes
+that file, so the app and the seeder can never drift apart.
 
 ### Development
 
@@ -88,11 +96,22 @@ pnpm dev
 - Frontend: http://localhost:3000
 - Backend: http://localhost:8080
 
+> The backend resolves its SQLite database from `TELECOM_DB_PATH` (default: `app.db` inside the `backend` directory when launched through the package scripts). All package scripts run on Windows, macOS, and Linux.
+
 Or run separately:
 
 ```bash
 pnpm dev:frontend   # Frontend only
 pnpm dev:backend    # Backend only
+```
+
+The backend launcher uses the configured `JAVA_HOME` or resolves a local
+Windows JDK installation without stopping other Java processes. When multiple
+projects are running, verify this project’s services independently:
+
+```powershell
+Invoke-WebRequest http://localhost:8080/api/health
+Invoke-WebRequest http://localhost:3000/api/health
 ```
 
 ### Testing
@@ -101,6 +120,7 @@ pnpm dev:backend    # Backend only
 pnpm test           # All tests
 pnpm test:frontend  # Vitest
 pnpm test:backend   # Gradle test
+pnpm test:e2e       # Full Playwright browser suite
 ```
 
 ### Linting
@@ -108,6 +128,13 @@ pnpm test:backend   # Gradle test
 ```bash
 pnpm lint
 ```
+
+## Repository conventions
+
+`AGENTS.md` is the working contract for anyone (human or agent) changing this
+repo: setup, gates, and the non-negotiables learned from past defects. The API
+contract is checked in at `docs/api/openapi.json` with a drift test keeping it
+honest, and operational runbooks live in `docs/runbooks/`.
 
 ## Application Pages
 
@@ -131,6 +158,43 @@ pnpm lint
 | `/api/usage`       | GET                    | Usage records        |
 | `/api/tickets`     | GET, POST, PUT, DELETE | Ticket CRUD          |
 | `/api/dashboard/*` | GET                    | Dashboard statistics |
+
+### Paginated collections
+
+`/api/customers`, `/api/devices`, `/api/tickets`, and `/api/usage` are paginated
+rather than returning whole tables. They accept `page` (0-based) and `size`
+(clamped server-side), plus per-resource filters — `search` and `status` on
+customers and devices. Customers also accept `sort`: `NAME_ASC`, `NAME_DESC`,
+`PLAN_ASC`, `PLAN_DESC`, `STATUS_ASC`, `STATUS_DESC`, `BALANCE_ASC`, or
+`BALANCE_DESC` (default `NAME_ASC`). Tickets accept `priority`, `status`,
+`customerId`, customer-name `search`, and inclusive `dateFrom`/`dateTo`
+(`YYYY-MM-DD`) filters. They respond with:
+
+The Support Tickets page also provides separate read-only lookups for Customer ID
+and Ticket ID. Customer lookup displays the account summary; Ticket ID lookup
+displays the matching ticket summary and never opens the edit form. Both fields
+support the Look up button and Enter key, and show validation or not-found
+messages without changing data.
+
+```json
+{ "content": [], "page": 0, "totalPages": 25, "totalElements": 500, "hasNext": true }
+```
+
+Errors use a single envelope from the global exception handler, so validation
+failures come back as `400` with the offending fields:
+
+```json
+{
+  "error": "Validation failed",
+  "message": "Some fields are missing or invalid",
+  "fields": { "email": "must not be blank" }
+}
+```
+
+Note the deliberate asymmetry in field naming: responses use `snake_case`
+(`plan_name`, `sim_number`) while request bodies use `camelCase` (`planId`,
+`simNumber`). Both sides are typed in `hooks/*.ts`, so keep new endpoints
+consistent with that convention instead of mixing styles per resource.
 
 ## API Documentation
 

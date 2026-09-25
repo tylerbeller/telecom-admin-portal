@@ -2,11 +2,9 @@ package com.example.telecom.controller;
 
 import com.example.telecom.model.Customer;
 import com.example.telecom.model.Device;
-import com.example.telecom.model.Plan;
 import com.example.telecom.model.SupportTicket;
 import com.example.telecom.repository.CustomerRepository;
 import com.example.telecom.repository.DeviceRepository;
-import com.example.telecom.repository.PlanRepository;
 import com.example.telecom.repository.SupportTicketRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,6 +16,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -26,40 +25,23 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class DashboardControllerTest {
 
     private final CustomerRepository customerRepository = mock(CustomerRepository.class);
-    private final PlanRepository planRepository = mock(PlanRepository.class);
     private final DeviceRepository deviceRepository = mock(DeviceRepository.class);
     private final SupportTicketRepository ticketRepository = mock(SupportTicketRepository.class);
 
     private MockMvc mockMvc;
 
-    private Customer activeBasicOne;
-    private Customer activeBasicTwo;
-    private Customer activeStandard;
-
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
-                .standaloneSetup(
-                        new DashboardController(customerRepository, planRepository, deviceRepository, ticketRepository))
+                .standaloneSetup(new DashboardController(customerRepository, deviceRepository, ticketRepository))
                 .build();
 
-        Plan basic = plan(1L, "Basic", "20.00");
-        Plan standard = plan(2L, "Standard", "40.00");
-        Plan premium = plan(3L, "Premium", "60.00");
-
-        activeBasicOne = customer(1L, basic, Customer.Status.ACTIVE);
-        activeBasicTwo = customer(2L, basic, Customer.Status.ACTIVE);
-        activeStandard = customer(3L, standard, Customer.Status.ACTIVE);
-        Customer suspendedPremium = customer(4L, premium, Customer.Status.SUSPENDED);
-
         when(customerRepository.countByStatus(Customer.Status.ACTIVE)).thenReturn(3L);
-        when(customerRepository.findByStatus(Customer.Status.ACTIVE))
-                .thenReturn(List.of(activeBasicOne, activeBasicTwo, activeStandard));
-        // Also stubbed on purpose: a regression that aggregates over every customer
-        // instead of the ACTIVE ones then returns a wrong number rather than an error.
-        when(customerRepository.findAll())
-                .thenReturn(List.of(activeBasicOne, activeBasicTwo, activeStandard, suspendedPremium));
-        when(planRepository.findAll()).thenReturn(List.of(basic, standard, premium));
+        when(customerRepository.sumMonthlyRevenueByStatusActive()).thenReturn(new BigDecimal("80.00"));
+        // Only Basic and Standard have ACTIVE subscribers; Premium is absent so the
+        // revenue-by-plan payload must not include it.
+        when(customerRepository.sumRevenueByPlan()).thenReturn(List.of(new Object[] {"Basic", new BigDecimal("40.00")},
+                new Object[] {"Standard", new BigDecimal("40.00")}));
         when(ticketRepository.countByStatusIn(any())).thenReturn(5L);
         when(deviceRepository.countByStatus(Device.Status.ASSIGNED)).thenReturn(7L);
     }
@@ -73,23 +55,27 @@ class DashboardControllerTest {
     }
 
     @Test
-    void statsRevenueExcludesNonActiveCustomers() throws Exception {
-        // The suspended customer sits on the 60.00 Premium plan. Billing counts ACTIVE
-        // subscribers only, so revenue must stay 80.00 and never reach 140.00.
+    void statsTakesRevenueFromTheSqlAggregate() throws Exception {
+        mockMvc.perform(get("/api/dashboard/stats")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.monthly_revenue").value(80.00));
+
+        verify(customerRepository).sumMonthlyRevenueByStatusActive();
+    }
+
+    @Test
+    void statsSerializesRevenueAsTwoDecimalMoney() throws Exception {
+        when(customerRepository.sumMonthlyRevenueByStatusActive()).thenReturn(new BigDecimal("80.0"));
+
         mockMvc.perform(get("/api/dashboard/stats")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.monthly_revenue").value(80.00));
     }
 
     @Test
-    void statsIgnoresActiveCustomersWithoutAPlan() throws Exception {
-        Customer planless = customer(5L, null, Customer.Status.ACTIVE);
-        when(customerRepository.findByStatus(Customer.Status.ACTIVE))
-                .thenReturn(List.of(activeBasicOne, activeBasicTwo, activeStandard, planless));
-        when(customerRepository.findAll())
-                .thenReturn(List.of(activeBasicOne, activeBasicTwo, activeStandard, planless));
+    void statsReturnsZeroRevenueOnAnEmptyDatabase() throws Exception {
+        when(customerRepository.sumMonthlyRevenueByStatusActive()).thenReturn(BigDecimal.ZERO.setScale(2));
 
         mockMvc.perform(get("/api/dashboard/stats")).andExpect(status().isOk())
-                .andExpect(jsonPath("$.monthly_revenue").value(80.00));
+                .andExpect(jsonPath("$.monthly_revenue").value(0.00));
     }
 
     @Test
@@ -100,9 +86,19 @@ class DashboardControllerTest {
     }
 
     @Test
-    void revenueByPlanMultipliesPlanPriceByActiveCustomerCount() throws Exception {
+    void revenueByPlanReturnsSummedMoneyPerPlan() throws Exception {
+        // The repository already multiplied monthlyPrice by the ACTIVE subscriber
+        // count in SQL; the controller must surface those values unchanged.
         mockMvc.perform(get("/api/dashboard/revenue-by-plan")).andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].revenue").value(40.00)).andExpect(jsonPath("$[1].revenue").value(40.00));
+    }
+
+    @Test
+    void revenueByPlanIsEmptyWhenNoPlanHasRevenue() throws Exception {
+        when(customerRepository.sumRevenueByPlan()).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/dashboard/revenue-by-plan")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
     }
 
     @Test
@@ -133,19 +129,5 @@ class DashboardControllerTest {
         mockMvc.perform(get("/api/dashboard/tickets-by-status")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2)).andExpect(jsonPath("$[0].name").value("OPEN"))
                 .andExpect(jsonPath("$[1].value").value(9));
-    }
-
-    private static Plan plan(Long id, String name, String price) {
-        Plan plan = new Plan(name, new BigDecimal(price), 10, 500, 500);
-        plan.setId(id);
-        return plan;
-    }
-
-    private static Customer customer(Long id, Plan plan, Customer.Status status) {
-        Customer customer = new Customer("First" + id, "Last" + id, "customer" + id + "@example.com", "555-000" + id,
-                plan);
-        customer.setId(id);
-        customer.setStatus(status);
-        return customer;
     }
 }

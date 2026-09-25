@@ -1,0 +1,17 @@
+{
+  "threshold": 7,
+  "gitignore": true,
+  "reporters": ["console"],
+  "ignore": [
+    "**/node_modules/**",
+    "**/.next/**",
+    "**/coverage/**",
+    "**/build/**",
+    "**/playwright-report/**",
+    "**/test-results/**",
+    "components/ui/**",
+    ".github/**",
+    "docs/api/openapi.json",
+    "pnpm-lock.yaml"
+  ]
+}

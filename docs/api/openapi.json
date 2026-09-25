@@ -1,0 +1,766 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "OpenAPI definition", "version": "v0" },
+  "servers": [{ "url": "http://localhost:8080", "description": "Generated server url" }],
+  "paths": {
+    "/api/tickets/{id}": {
+      "get": {
+        "tags": ["support-ticket-controller"],
+        "operationId": "getTicket",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/TicketResponse" } } }
+          }
+        }
+      },
+      "put": {
+        "tags": ["support-ticket-controller"],
+        "operationId": "updateTicket",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/TicketRequest" } }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/TicketResponse" } } }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["support-ticket-controller"],
+        "operationId": "deleteTicket",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/api/plans/{id}": {
+      "get": {
+        "tags": ["plan-controller"],
+        "operationId": "getPlan",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/PlanResponse" } } }
+          }
+        }
+      },
+      "put": {
+        "tags": ["plan-controller"],
+        "operationId": "updatePlan",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/PlanRequest" } }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/PlanResponse" } } }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["plan-controller"],
+        "operationId": "deletePlan",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/api/devices/{id}": {
+      "get": {
+        "tags": ["device-controller"],
+        "operationId": "getDevice",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/DeviceResponse" } } }
+          }
+        }
+      },
+      "put": {
+        "tags": ["device-controller"],
+        "operationId": "updateDevice",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/DeviceRequest" } }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/DeviceResponse" } } }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["device-controller"],
+        "operationId": "deleteDevice",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/api/customers/{id}": {
+      "get": {
+        "tags": ["customer-controller"],
+        "operationId": "getCustomer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/CustomerResponse" } } }
+          }
+        }
+      },
+      "put": {
+        "tags": ["customer-controller"],
+        "operationId": "updateCustomer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CustomerUpdateRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/CustomerResponse" } } }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["customer-controller"],
+        "operationId": "deleteCustomer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/api/tickets": {
+      "get": {
+        "tags": ["support-ticket-controller"],
+        "operationId": "getTickets",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32", "default": 0 }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32", "default": 50 }
+          },
+          { "name": "priority", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "status", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "name": "customerId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int64" }
+          },
+          { "name": "search", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "dateFrom", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "dateTo", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/PagedResponse" } } }
+          }
+        }
+      },
+      "post": {
+        "tags": ["support-ticket-controller"],
+        "operationId": "createTicket",
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/TicketRequest" } }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/TicketResponse" } } }
+          }
+        }
+      }
+    },
+    "/api/plans": {
+      "get": {
+        "tags": ["plan-controller"],
+        "operationId": "getAllPlans",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/PlanResponse" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["plan-controller"],
+        "operationId": "createPlan",
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/PlanRequest" } }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/PlanResponse" } } }
+          }
+        }
+      }
+    },
+    "/api/devices": {
+      "get": {
+        "tags": ["device-controller"],
+        "operationId": "getDevices",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32", "default": 0 }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32", "default": 20 }
+          },
+          { "name": "search", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "status", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/PagedResponse" } } }
+          }
+        }
+      },
+      "post": {
+        "tags": ["device-controller"],
+        "operationId": "createDevice",
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/DeviceRequest" } }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/DeviceResponse" } } }
+          }
+        }
+      }
+    },
+    "/api/customers": {
+      "get": {
+        "tags": ["customer-controller"],
+        "operationId": "getCustomers",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32", "default": 0 }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32", "default": 20 }
+          },
+          { "name": "search", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "status", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "default": "NAME_ASC" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/PagedResponse" } } }
+          }
+        }
+      },
+      "post": {
+        "tags": ["customer-controller"],
+        "operationId": "createCustomer",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CustomerCreateRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/CustomerResponse" } } }
+          }
+        }
+      }
+    },
+    "/api/usage": {
+      "get": {
+        "tags": ["usage-record-controller"],
+        "operationId": "getUsageRecords",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32", "default": 0 }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32", "default": 50 }
+          },
+          { "name": "type", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "name": "customerId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int64" }
+          },
+          { "name": "dateFrom", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "dateTo", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/PagedResponse" } } }
+          }
+        }
+      }
+    },
+    "/api/usage/customer/{customerId}": {
+      "get": {
+        "tags": ["usage-record-controller"],
+        "operationId": "getByCustomer",
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32", "default": 0 }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32", "default": 50 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/PagedResponse" } } }
+          }
+        }
+      }
+    },
+    "/api/plans/active": {
+      "get": {
+        "tags": ["plan-controller"],
+        "operationId": "getActivePlans",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/PlanResponse" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "tags": ["health-controller"],
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "type": "object", "additionalProperties": { "type": "string" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard/tickets-by-status": {
+      "get": {
+        "tags": ["dashboard-controller"],
+        "operationId": "getTicketsByStatus",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ChartData" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard/stats": {
+      "get": {
+        "tags": ["dashboard-controller"],
+        "operationId": "getStats",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/DashboardStats" } } }
+          }
+        }
+      }
+    },
+    "/api/dashboard/revenue-by-plan": {
+      "get": {
+        "tags": ["dashboard-controller"],
+        "operationId": "getRevenueByPlan",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/RevenueData" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard/devices-by-status": {
+      "get": {
+        "tags": ["dashboard-controller"],
+        "operationId": "getDevicesByStatus",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ChartData" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard/customers-by-plan": {
+      "get": {
+        "tags": ["dashboard-controller"],
+        "operationId": "getCustomersByPlan",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ChartData" } }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "TicketRequest": {
+        "type": "object",
+        "properties": {
+          "customerId": { "type": "integer", "format": "int64" },
+          "subject": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 },
+          "priority": { "type": "string", "minLength": 1 },
+          "status": { "type": "string" }
+        },
+        "required": ["customerId", "description", "priority", "subject"]
+      },
+      "TicketResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "customer_id": { "type": "integer", "format": "int64" },
+          "customer_name": { "type": "string" },
+          "subject": { "type": "string" },
+          "description": { "type": "string" },
+          "priority": { "type": "string" },
+          "status": { "type": "string" },
+          "created_at": { "type": "string" },
+          "resolved_at": { "type": "string" }
+        }
+      },
+      "PlanRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "monthlyPrice": { "type": "number", "minimum": 0.0 },
+          "dataLimitGb": { "type": "integer", "format": "int32" },
+          "minutesLimit": { "type": "integer", "format": "int32" },
+          "smsLimit": { "type": "integer", "format": "int32" },
+          "isActive": { "type": "boolean" }
+        },
+        "required": ["monthlyPrice", "name"]
+      },
+      "PlanResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "name": { "type": "string" },
+          "monthly_price": { "type": "number" },
+          "data_limit_gb": { "type": "integer", "format": "int32" },
+          "minutes_limit": { "type": "integer", "format": "int32" },
+          "sms_limit": { "type": "integer", "format": "int32" },
+          "is_active": { "type": "boolean" }
+        }
+      },
+      "DeviceRequest": {
+        "type": "object",
+        "properties": {
+          "imei": { "type": "string", "minLength": 1 },
+          "model": { "type": "string", "minLength": 1 },
+          "simNumber": { "type": "string", "minLength": 1 },
+          "customerId": { "type": "integer", "format": "int64" },
+          "status": { "type": "string" }
+        },
+        "required": ["imei", "model", "simNumber"]
+      },
+      "DeviceResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "imei": { "type": "string" },
+          "model": { "type": "string" },
+          "sim_number": { "type": "string" },
+          "customer_id": { "type": "integer", "format": "int64" },
+          "customer_name": { "type": "string" },
+          "status": { "type": "string" },
+          "assigned_at": { "type": "string" },
+          "created_at": { "type": "string" }
+        }
+      },
+      "CustomerUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "firstName": { "type": "string", "minLength": 1 },
+          "lastName": { "type": "string", "minLength": 1 },
+          "email": { "type": "string", "minLength": 1 },
+          "phone": { "type": "string", "minLength": 1 },
+          "planId": { "type": "integer", "format": "int64" },
+          "status": { "type": "string" },
+          "balance": { "type": "number" }
+        },
+        "required": ["email", "firstName", "lastName", "phone"]
+      },
+      "CustomerResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "first_name": { "type": "string" },
+          "last_name": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "plan_id": { "type": "integer", "format": "int64" },
+          "plan_name": { "type": "string" },
+          "status": { "type": "string" },
+          "balance": { "type": "number" },
+          "activated_at": { "type": "string" },
+          "created_at": { "type": "string" }
+        }
+      },
+      "CustomerCreateRequest": {
+        "type": "object",
+        "properties": {
+          "firstName": { "type": "string", "minLength": 1 },
+          "lastName": { "type": "string", "minLength": 1 },
+          "email": { "type": "string", "minLength": 1 },
+          "phone": { "type": "string", "minLength": 1 },
+          "planId": { "type": "integer", "format": "int64" },
+          "balance": { "type": "number" }
+        },
+        "required": ["email", "firstName", "lastName", "phone", "planId"]
+      },
+      "PagedResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/UsageRecordResponse" }
+          },
+          "page": { "type": "integer", "format": "int32" },
+          "totalPages": { "type": "integer", "format": "int32" },
+          "totalElements": { "type": "integer", "format": "int64" },
+          "hasNext": { "type": "boolean" }
+        }
+      },
+      "UsageRecordResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "customer_id": { "type": "integer", "format": "int64" },
+          "customer_name": { "type": "string" },
+          "type": { "type": "string" },
+          "quantity": { "type": "number" },
+          "cost": { "type": "number" },
+          "recorded_at": { "type": "string" }
+        }
+      },
+      "ChartData": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "value": { "type": "integer", "format": "int64" }
+        }
+      },
+      "DashboardStats": {
+        "type": "object",
+        "properties": {
+          "active_customers": { "type": "integer", "format": "int64" },
+          "monthly_revenue": { "type": "number" },
+          "open_tickets": { "type": "integer", "format": "int64" },
+          "devices_in_use": { "type": "integer", "format": "int64" }
+        }
+      },
+      "RevenueData": {
+        "type": "object",
+        "properties": { "name": { "type": "string" }, "revenue": { "type": "number" } }
+      }
+    }
+  }
+}

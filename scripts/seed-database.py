@@ -3,6 +3,7 @@
 
 import sqlite3
 import random
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -13,7 +14,9 @@ except ImportError:
     print("Or run: pip install -r scripts/requirements.txt")
     exit(1)
 
-DB_PATH = Path(__file__).parent.parent / "backend" / "app.db"
+BACKEND_DIR = Path(__file__).parent.parent / "backend"
+configured_db_path = Path(os.environ.get("TELECOM_DB_PATH", "app.db"))
+DB_PATH = configured_db_path if configured_db_path.is_absolute() else BACKEND_DIR / configured_db_path
 SEED = 42
 
 random.seed(SEED)
@@ -21,9 +24,9 @@ fake = Faker()
 Faker.seed(SEED)
 
 
-def to_sqlite_timestamp(dt: datetime) -> str:
-    """Convert datetime to SQLite JDBC compatible timestamp format."""
-    return dt.strftime("%Y-%m-%d %H:%M:%S.") + f"{dt.microsecond // 1000:03d}"
+def to_sqlite_timestamp(dt: datetime) -> int:
+    """Convert datetime to the epoch milliseconds SQLite JDBC writes for Instant values."""
+    return int(dt.timestamp() * 1000)
 
 PLANS = [
     ("Basic", 29.99, 5, 500, 500, True),
@@ -68,78 +71,12 @@ TICKET_SUBJECTS = [
 ]
 
 
+MIGRATION_PATH = Path(__file__).parent.parent / "backend" / "src" / "main" / "resources" / "db" / "migration" / "V1__init.sql"
+
+
 def create_tables(conn: sqlite3.Connection):
-    """Create tables matching JPA entity schema (plural table names)."""
-    cursor = conn.cursor()
-    
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS plans (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name VARCHAR(255) NOT NULL,
-            monthly_price NUMERIC(10,2) NOT NULL,
-            data_limit_gb INTEGER,
-            minutes_limit INTEGER,
-            sms_limit INTEGER,
-            is_active BOOLEAN NOT NULL DEFAULT 1
-        )
-    """)
-    
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS customers (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            first_name VARCHAR(255) NOT NULL,
-            last_name VARCHAR(255) NOT NULL,
-            email VARCHAR(255) NOT NULL UNIQUE,
-            phone VARCHAR(255) NOT NULL,
-            plan_id BIGINT NOT NULL,
-            status VARCHAR(255) NOT NULL DEFAULT 'ACTIVE',
-            balance NUMERIC(10,2) NOT NULL DEFAULT 0,
-            activated_at TIMESTAMP,
-            created_at TIMESTAMP NOT NULL,
-            FOREIGN KEY (plan_id) REFERENCES plans(id)
-        )
-    """)
-    
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS devices (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            imei VARCHAR(255) NOT NULL UNIQUE,
-            model VARCHAR(255) NOT NULL,
-            sim_number VARCHAR(255) NOT NULL UNIQUE,
-            customer_id BIGINT,
-            status VARCHAR(255) NOT NULL DEFAULT 'AVAILABLE',
-            assigned_at TIMESTAMP,
-            created_at TIMESTAMP NOT NULL,
-            FOREIGN KEY (customer_id) REFERENCES customers(id)
-        )
-    """)
-    
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS usage_records (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            customer_id BIGINT NOT NULL,
-            type VARCHAR(255) NOT NULL,
-            quantity NUMERIC(10,2) NOT NULL,
-            cost NUMERIC(10,2) NOT NULL,
-            recorded_at TIMESTAMP NOT NULL,
-            FOREIGN KEY (customer_id) REFERENCES customers(id)
-        )
-    """)
-    
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS support_tickets (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            customer_id BIGINT NOT NULL,
-            subject VARCHAR(255) NOT NULL,
-            description TEXT NOT NULL,
-            priority VARCHAR(255) NOT NULL DEFAULT 'MEDIUM',
-            status VARCHAR(255) NOT NULL DEFAULT 'OPEN',
-            created_at TIMESTAMP NOT NULL,
-            resolved_at TIMESTAMP,
-            FOREIGN KEY (customer_id) REFERENCES customers(id)
-        )
-    """)
-    
+    """Create the Flyway-managed schema (single source of truth: V1__init.sql)."""
+    conn.executescript(MIGRATION_PATH.read_text(encoding="utf-8"))
     conn.commit()
 
 

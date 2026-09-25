@@ -6,39 +6,32 @@
   "scripts": {
     "dev": "concurrently \"pnpm dev:frontend\" \"pnpm dev:backend\"",
     "dev:frontend": "next dev",
-    "dev:backend": "cd backend && ./gradlew bootRun",
+    "dev:backend": "node scripts/run-backend.mjs bootRun",
     "build": "next build",
-    "build:backend": "cd backend && ./gradlew build",
+    "build:backend": "node scripts/run-backend.mjs build",
     "start": "concurrently \"pnpm start:frontend\" \"pnpm start:backend\"",
     "start:frontend": "next start",
-    "start:backend": "cd backend && java -jar build/libs/*.jar",
+    "start:backend": "node scripts/run-backend.mjs jar",
     "test": "pnpm test:frontend && pnpm test:backend",
     "test:frontend": "vitest run",
     "test:frontend:coverage": "vitest run --coverage",
-    "test:backend": "cd backend && ./gradlew test",
-    "test:backend:coverage": "cd backend && ./gradlew test jacocoTestReport",
+    "test:backend": "node scripts/run-backend.mjs test",
+    "test:backend:coverage": "node scripts/run-backend.mjs test jacocoTestReport",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "lint": "eslint . && tsc --noEmit",
-    "lint:backend": "cd backend && ./gradlew lint",
+    "lint:backend": "node scripts/run-backend.mjs lint",
     "lint:all": "pnpm lint && pnpm lint:backend",
-    "format": "prettier --write . && cd backend && ./gradlew format",
-    "format:check": "prettier --check . && cd backend && ./gradlew formatCheck",
+    "check:dup": "jscpd .",
+    "check:deps": "knip --include files,dependencies",
+    "format": "prettier --write . && node scripts/run-backend.mjs format",
+    "format:check": "prettier --check . && node scripts/run-backend.mjs formatCheck",
     "format:frontend": "prettier --write .",
-    "format:backend": "cd backend && ./gradlew format",
+    "format:backend": "node scripts/run-backend.mjs format",
     "setup": "pnpm install --frozen-lockfile && pnpm setup:db",
-    "setup:db": "python3 scripts/seed-database.py",
-    "reset:db": "rm -f backend/app.db && pnpm setup:db",
+    "setup:db": "node scripts/seed-db.mjs",
+    "reset:db": "node scripts/reset-db.mjs",
     "prepare": "husky"
-  },
-  "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md,css}": [
-      "prettier --write"
-    ]
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.23",
@@ -76,7 +69,9 @@
     "eslint": "^9.39.5",
     "eslint-config-next": "16.3.5",
     "husky": "^9.1.7",
+    "jscpd": "^5.3.2",
     "jsdom": "^30.0.1",
+    "knip": "^6.38.0",
     "lint-staged": "^17.5.1",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1",
@@ -85,5 +80,12 @@
     "typescript": "^5.9.3",
     "vite": "^7.3.6",
     "vitest": "^4.1.11"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "msw",
+      "unrs-resolver"
+    ]
   }
 }

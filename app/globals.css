@@ -71,7 +71,10 @@
   --card-foreground: #000000;
   --popover: #ffffff;
   --popover-foreground: #000000;
-  --primary: #2563eb;
+  /* Brand: Target Corporation — brand tokens are Target Red (#cc0000).
+     State colors (success, warning, info, destructive) are intentionally
+     unchanged: they signal state, not brand. */
+  --primary: #cc0000;
   --primary-foreground: #ffffff;
   --secondary: #f7f7f8;
   --secondary-foreground: #000000;
@@ -83,17 +86,18 @@
   --destructive-foreground: #ffffff;
   --border: rgba(0, 0, 0, 0.14);
   --input: rgba(0, 0, 0, 0.14);
-  --ring: #2238df;
+  --ring: #cc0000;
 
-  /* Chart Colors */
-  --chart-1: #2563eb;
-  --chart-2: #7c3aed;
-  --chart-3: #059669;
-  --chart-4: #d97706;
-  --chart-5: #dc2626;
-  --chart-6: #0891b2;
-  --chart-7: #4f46e5;
-  --chart-8: #9333ea;
+  /* Chart Colors — Target-anchored ramp: red → deep red → maroon, then a
+     descending neutral-gray tail so adjacent series stay distinguishable. */
+  --chart-1: #cc0000;
+  --chart-2: #991b1b;
+  --chart-3: #5f1414;
+  --chart-4: #8b95a3;
+  --chart-5: #6b7280;
+  --chart-6: #4e5865;
+  --chart-7: #363f4c;
+  --chart-8: #1b2028;
 
   /* Functional Colors */
   --success: #00b367;
@@ -111,12 +115,12 @@
   /* Sidebar */
   --sidebar: #f7f7f8;
   --sidebar-foreground: #000000;
-  --sidebar-primary: #2563eb;
+  --sidebar-primary: #cc0000;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #ffffff;
   --sidebar-accent-foreground: #000000;
   --sidebar-border: rgba(0, 0, 0, 0.14);
-  --sidebar-ring: #2238df;
+  --sidebar-ring: #cc0000;
 }
 
 .dark {
@@ -127,8 +131,11 @@
   --card-foreground: #ffffff;
   --popover: #141414;
   --popover-foreground: #ffffff;
-  --primary: #60a5fa;
-  --primary-foreground: #ffffff;
+  /* Brand: Target Red lightened (#ff8c8c) for contrast on dark surfaces;
+     kept visibly lighter than --destructive (#ff5c5c) so brand and error
+     stay distinguishable. State colors are intentionally unchanged. */
+  --primary: #ff8c8c;
+  --primary-foreground: #000000;
   --secondary: #1a1a1a;
   --secondary-foreground: #ffffff;
   --muted: #1a1a1a;
@@ -139,17 +146,18 @@
   --destructive-foreground: #000000;
   --border: rgba(255, 255, 255, 0.14);
   --input: rgba(255, 255, 255, 0.14);
-  --ring: #6b7eff;
+  --ring: #ff8c8c;
 
-  /* Chart Colors */
-  --chart-1: #60a5fa;
-  --chart-2: #a78bfa;
-  --chart-3: #34d399;
-  --chart-4: #fbbf24;
-  --chart-5: #f87171;
-  --chart-6: #22d3ee;
-  --chart-7: #818cf8;
-  --chart-8: #c084fc;
+  /* Chart Colors — Target-anchored ramp ascending toward lighter reds, then
+     an ascending neutral-gray tail (lighter = readable on dark surfaces). */
+  --chart-1: #cc0000;
+  --chart-2: #e54949;
+  --chart-3: #ff7d7d;
+  --chart-4: #ffb3b3;
+  --chart-5: #64748b;
+  --chart-6: #94a3b8;
+  --chart-7: #cbd5e1;
+  --chart-8: #f1f5f9;
 
   /* Functional Colors */
   --success: #00b36b;
@@ -167,12 +175,12 @@
   /* Sidebar */
   --sidebar: #141414;
   --sidebar-foreground: #ffffff;
-  --sidebar-primary: #60a5fa;
-  --sidebar-primary-foreground: #ffffff;
+  --sidebar-primary: #ff8c8c;
+  --sidebar-primary-foreground: #000000;
   --sidebar-accent: #1a1a1a;
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgba(255, 255, 255, 0.14);
-  --sidebar-ring: #6b7eff;
+  --sidebar-ring: #ff8c8c;
 }
 
 @layer base {

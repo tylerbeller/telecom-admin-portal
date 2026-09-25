@@ -1,1 +1,19 @@
-pnpm lint-staged
+#!/bin/sh
+# pnpm is a standalone install on this machine (%LOCALAPPDATA%\Programs\pnpm)
+# and node lives beside it; neither is on PATH in git-bash shells, which used
+# to make this hook exit 127. A gate that errors is a defect in the gate, so
+# resolve the toolchain explicitly before running it.
+for dir in "$LOCALAPPDATA/Programs/pnpm" "$LOCALAPPDATA/Programs/nodejs" "$APPDATA/npm"; do
+  [ -d "$dir" ] && PATH="$dir:$PATH"
+done
+export PATH
+
+if command -v pnpm >/dev/null 2>&1; then
+  exec pnpm lint-staged
+elif command -v corepack >/dev/null 2>&1; then
+  exec corepack pnpm lint-staged
+else
+  echo "pre-commit: pnpm not found on PATH or in known install locations." >&2
+  echo "Fix the environment; do not bypass the hook." >&2
+  exit 1
+fi

@@ -37,7 +37,8 @@ export function TicketsTable({ tickets, onEdit, onDelete }: TicketsTableProps) {
     <Table>
       <TableHeader className="bg-background sticky top-0 z-10">
         <TableRow>
-          <TableHead className="w-[60px]">ID</TableHead>
+          <TableHead className="w-[70px]">Ticket ID</TableHead>
+          <TableHead className="w-[90px]">Customer ID</TableHead>
           <TableHead>Customer</TableHead>
           <TableHead>Subject</TableHead>
           <TableHead>Priority</TableHead>
@@ -50,6 +51,7 @@ export function TicketsTable({ tickets, onEdit, onDelete }: TicketsTableProps) {
         {tickets.map((ticket) => (
           <TableRow key={ticket.id}>
             <TableCell className="font-medium">{ticket.id}</TableCell>
+            <TableCell>{ticket.customer_id}</TableCell>
             <TableCell>{ticket.customer_name}</TableCell>
             <TableCell className="max-w-[200px] truncate">{ticket.subject}</TableCell>
             <TableCell>
@@ -71,10 +73,20 @@ export function TicketsTable({ tickets, onEdit, onDelete }: TicketsTableProps) {
             </TableCell>
             <TableCell className="text-right">
               <div className="flex justify-end gap-1">
-                <Button variant="ghost" size="icon" onClick={() => onEdit(ticket)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Edit ticket ${ticket.id}`}
+                  onClick={() => onEdit(ticket)}
+                >
                   <Pencil className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => onDelete(ticket)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Delete ticket ${ticket.id}`}
+                  onClick={() => onDelete(ticket)}
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
