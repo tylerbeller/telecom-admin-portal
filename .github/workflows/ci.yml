@@ -48,7 +48,7 @@ jobs:
         run: pnpm check:dup && pnpm check:deps
 
       - name: Structural gates
-        run: pnpm check:filesize && pnpm check:todos && pnpm check:agents
+        run: pnpm check:filesize && pnpm check:todos && pnpm check:agents && pnpm check:flags
 
       - name: Test with coverage
         run: pnpm test:frontend:coverage

@@ -28,6 +28,7 @@
     "check:todos": "node scripts/check-todos.mjs",
     "check:agents": "node scripts/check-agents-md.mjs",
     "check:bundle": "node scripts/check-bundle-size.mjs",
+    "check:flags": "node scripts/check-flags.mjs",
     "format": "prettier --write . && node scripts/run-backend.mjs format",
     "format:check": "prettier --check . && node scripts/run-backend.mjs formatCheck",
     "format:frontend": "prettier --write .",
