@@ -132,7 +132,8 @@ pnpm check:bundle     # Assert the client bundle stays within budget (after pnpm
 ```
 
 Other gates: `pnpm check:dup` (duplicate code), `pnpm check:deps` (dead
-dependencies), `pnpm check:filesize`, `pnpm check:todos`, and
+dependencies), `pnpm check:filesize`, `pnpm check:todos`, `pnpm check:flags`,
+`pnpm check:versions` (frontend/backend version drift), and
 `pnpm check:agents` (verifies AGENTS.md's documented commands still exist).
 
 ### Linting
