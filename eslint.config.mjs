@@ -23,6 +23,16 @@ const eslintConfig = defineConfig([
       // worst file (app/tickets/page.tsx at 32); they only move down.
       complexity: ["error", 35],
       "max-depth": ["error", 5],
+      // Naming conventions for the frontend, matching the backend's PMD
+      // coverage: types are PascalCase, functions are camelCase (React
+      // components are PascalCase by exception). Object/type *properties* are
+      // deliberately left unconstrained because the API contract is snake_case.
+      "@typescript-eslint/naming-convention": [
+        "error",
+        { selector: "typeLike", format: ["PascalCase"] },
+        { selector: "enumMember", format: ["PascalCase", "UPPER_CASE"] },
+        { selector: "function", format: ["camelCase", "PascalCase"] },
+      ],
       "react-hooks/set-state-in-effect": "off",
       "no-restricted-globals": [
         "error",

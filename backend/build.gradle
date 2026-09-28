@@ -9,7 +9,9 @@ plugins {
 }
 
 group = 'com.example'
-version = '0.0.1-SNAPSHOT'
+// Kept in lock-step with package.json; scripts/check-version-drift.mjs fails
+// CI if the two ever diverge.
+version = '0.1.0'
 description = 'Telecom administration portal'
 
 java {

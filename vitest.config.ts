@@ -12,6 +12,9 @@ export default defineConfig({
     // passes on retry is visible in CI output instead of being absorbed
     // silently into local runs.
     retry: process.env.CI ? 2 : 0,
+    // Naming convention: every unit test lives under __tests__ as *.test.ts(x),
+    // so a mistyped suffix cannot silently exclude a suite from the run.
+    include: ["__tests__/**/*.test.{ts,tsx}"],
     exclude: ["**/node_modules/**", "**/e2e/**"],
     reporters: ["default", "json", "junit"],
     outputFile: {
