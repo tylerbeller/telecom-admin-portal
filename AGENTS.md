@@ -36,6 +36,7 @@ pnpm check:filesize   # large-file ratchet
 pnpm check:todos      # debt markers must reference an issue: TODO(#123)
 pnpm check:agents     # this file's documented commands must exist
 pnpm check:flags      # declared feature flags must have a call site
+pnpm check:versions   # frontend and backend versions must agree
 pnpm build && pnpm check:bundle   # bundle-size ratchet
 ```
 
