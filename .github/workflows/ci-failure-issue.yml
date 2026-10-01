@@ -24,12 +24,13 @@ jobs:
           RUN_URL: ${{ github.event.workflow_run.html_url }}
           SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          open_count=$(gh issue list --state open --search "CI failed on main in:title" --json number --jq 'length')
+          open_count=$(gh issue list --repo "${{ github.repository }}" --state open --search "CI failed on main in:title" --json number --jq 'length')
           if [ "$open_count" -gt 0 ]; then
             echo "An open CI-failure issue already exists; not filing a duplicate."
             exit 0
           fi
           gh issue create \
+            --repo "${{ github.repository }}" \
             --title "CI failed on main (${SHA})" \
             --label bug \
             --body "The CI workflow failed on main.
