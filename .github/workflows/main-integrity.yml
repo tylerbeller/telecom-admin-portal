@@ -1,0 +1,107 @@
+name: Main integrity
+
+# Nightly proof that main is still green between merges. CI runs on every push
+# and pull request, but the suites themselves can rot between merges: dependency
+# drift, browser binaries, database changes. This re-runs the backend and e2e
+# suites against last night's main so rot surfaces in hours, not at the next
+# merge. A failure files its own issue (deduplicated), which keeps real work
+# queued for the scheduled maintenance runs.
+
+on:
+  schedule:
+    - cron: "30 5 * * *" # 05:30 UTC, overnight in North America
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: main-integrity-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Backend + e2e against main
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: 10.33.4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afdb3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Backend tests
+        run: ./gradlew test
+        working-directory: backend
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium
+
+      - name: Setup database
+        run: |
+          python3 -m pip install --requirement scripts/requirements.txt
+          python3 scripts/seed-database.py
+
+      - name: Run e2e tests
+        run: pnpm test:e2e
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: ${{ !cancelled() }}
+        with:
+          name: nightly-playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: ${{ !cancelled() }}
+        with:
+          name: nightly-test-results
+          path: test-results/
+          retention-days: 30
+
+  report:
+    name: File issue on failure
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: check
+    if: ${{ failure() }}
+    permissions:
+      issues: write
+    steps:
+      # Same dedup pattern as ci-failure-issue.yml: one open nightly-failure
+      # issue at a time, so a red week produces one triage ticket, not seven.
+      - name: Open a triage issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          open_count=$(gh issue list --state open --search "Nightly main check failed in:title" --json number --jq 'length')
+          if [ "$open_count" -gt 0 ]; then
+            echo "An open nightly-failure issue already exists; not filing a duplicate."
+            exit 0
+          fi
+          gh issue create \
+            --title "Nightly main check failed" \
+            --label bug \
+            --body "The nightly main-integrity run failed on main.
+
+          Run: ${RUN_URL}
+
+          Nightly runs catch rot between merges: dependency drift, flaky e2e, environment changes.
+          Triage steps: docs/runbooks/ci-failure-triage.md"
