@@ -31,7 +31,7 @@ jobs:
         with:
           version: 10.33.4
 
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afdb3f7d6820020 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
           cache: "pnpm"
@@ -86,17 +86,20 @@ jobs:
     steps:
       # Same dedup pattern as ci-failure-issue.yml: one open nightly-failure
       # issue at a time, so a red week produces one triage ticket, not seven.
+      # --repo is passed explicitly: the report job has no checkout step, so
+      # gh has no git context to infer the repository from.
       - name: Open a triage issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          open_count=$(gh issue list --state open --search "Nightly main check failed in:title" --json number --jq 'length')
+          open_count=$(gh issue list --repo "${{ github.repository }}" --state open --search "Nightly main check failed in:title" --json number --jq 'length')
           if [ "$open_count" -gt 0 ]; then
             echo "An open nightly-failure issue already exists; not filing a duplicate."
             exit 0
           fi
           gh issue create \
+            --repo "${{ github.repository }}" \
             --title "Nightly main check failed" \
             --label bug \
             --body "The nightly main-integrity run failed on main.
