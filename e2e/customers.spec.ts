@@ -1,11 +1,8 @@
 import { test, expect } from "@playwright/test"
 
 test.describe("Customers Page", () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto("/customers")
-  })
-
   test("should display customers table", async ({ page }) => {
+    await page.goto("/customers")
     await expect(page.getByLabel("breadcrumb")).toBeVisible()
 
     const table = page.locator("table")
@@ -16,7 +13,7 @@ test.describe("Customers Page", () => {
     const customersResponse = page.waitForResponse(
       (response) => response.url().includes("/api/customers") && response.status() === 200
     )
-    await page.reload()
+    await page.goto("/customers")
     const response = await customersResponse
     const data = await response.json()
     expect(Array.isArray(data.content)).toBeTruthy()
@@ -24,6 +21,7 @@ test.describe("Customers Page", () => {
   })
 
   test("should display customer data in table rows", async ({ page }) => {
+    await page.goto("/customers")
     await page.waitForSelector("table tbody tr", { timeout: 10000 })
     const rows = page.locator("table tbody tr")
     const rowCount = await rows.count()
@@ -31,6 +29,7 @@ test.describe("Customers Page", () => {
   })
 
   test("should filter customers by search", async ({ page }) => {
+    await page.goto("/customers")
     await page.waitForSelector("table tbody tr")
 
     await page.getByLabel("Search customers").fill("danielle.johnson@yahoo.com")
@@ -43,6 +42,7 @@ test.describe("Customers Page", () => {
   })
 
   test("should sort customers using every sort option", async ({ page }) => {
+    await page.goto("/customers")
     await page.waitForSelector("table tbody tr")
 
     const options = [
@@ -67,6 +67,7 @@ test.describe("Customers Page", () => {
   })
 
   test("should have add customer button", async ({ page }) => {
+    await page.goto("/customers")
     const addButton = page.getByRole("button", { name: /add|new|create/i })
     await expect(addButton).toBeVisible()
   })
