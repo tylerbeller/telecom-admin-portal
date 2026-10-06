@@ -4,7 +4,7 @@
  * install (the launcher is `python`/`py`), so the interpreter is resolved at
  * runtime, preferring the repo's own virtualenv.
  */
-import { spawn } from "node:child_process"
+import { spawn, spawnSync } from "node:child_process"
 import { existsSync } from "node:fs"
 import { isAbsolute, join } from "node:path"
 
@@ -20,26 +20,41 @@ const seeder = join(repoRoot, "scripts", "seed-database.py")
 const candidates = [
   join(repoRoot, ".venv", "Scripts", "python.exe"),
   join(repoRoot, ".venv", "bin", "python"),
+  "python3",
+  "python",
+  "py",
 ]
 
+function canRun(command) {
+  const result = spawnSync(command, ["--version"], { stdio: "ignore" })
+  return !result.error && result.status === 0
+}
+
+export function resolvePython({ exists = existsSync, probe = canRun } = {}) {
+  return (
+    candidates.find((command) => {
+      const isPath = command.includes("/") || command.includes("\\")
+      return (!isPath || exists(command)) && probe(command)
+    }) ?? null
+  )
+}
+
 export function runSeeder() {
-  const venvPython = candidates.find((path) => existsSync(path)) ?? null
-  spawnSeeder(venvPython ?? "python3")
+  const command = resolvePython()
+  if (!command) {
+    console.error(
+      "Python 3 is required to seed the database (python3/python/py on PATH, or a .venv in the repo)"
+    )
+    process.exit(1)
+  }
+  spawnSeeder(command)
 }
 
 function spawnSeeder(command) {
   const child = spawn(command, [seeder], { cwd: repoRoot, stdio: "inherit" })
   child.on("error", () => {
-    if (command === "python3") {
-      spawnSeeder("python")
-    } else if (command === "python") {
-      spawnSeeder("py")
-    } else {
-      console.error(
-        "Python 3 is required to seed the database (python3/python/py on PATH, or a .venv in the repo)"
-      )
-      process.exit(1)
-    }
+    console.error(`Failed to start Python interpreter: ${command}`)
+    process.exit(1)
   })
   child.on("exit", (code, signal) => process.exit(signal ? 1 : (code ?? 0)))
 }
